@@ -25,11 +25,11 @@ Alternatively, from the parent of the package source directory, run:
 R CMD INSTALL sfcqr
 ```
 
-After the repository is published, replace `USERNAME` with its owner:
+Install the current version directly from GitHub:
 
 ```r
 install.packages("remotes")
-remotes::install_github("USERNAME/sfcqr", ref = "v0.1.1")
+remotes::install_github("dingketang/sfcqr", ref = "main")
 ```
 
 ## Reproducible example: the main simulation setting
@@ -54,26 +54,21 @@ This example follows the main simulation in Section 5.1 of the manuscript and th
 Writing `B_ell` for the tensor-product basis functions, the image and coefficient surfaces are
 
 $$
-Z_i(s) = \sum_{\ell=1}^{36} A_{i\ell}\ell^{-1/4}B_\ell(s),
-\qquad A_{i\ell} \sim \operatorname{Unif}(0,4),
+Z_i(s) = \sum_{\ell=1}^{36} A_{i\ell}\ell^{-1/4}B_{\ell}(s), \qquad A_{i\ell} \sim \mathrm{Unif}(0,4),
 $$
 
 $$
-C_1(s) = B_1(s) + B_8(s),
-\qquad C_2(s) = 0.8B_{22}(s) + 1.2B_{29}(s).
+C_1(s) = B_1(s) + B_8(s), \qquad C_2(s) = 0.8B_{22}(s) + 1.2B_{29}(s).
 $$
 
 The main-branch generator uses
 
 $$
-\log T_i = \{\langle Z_i,C_1\rangle + X_{i1}\}\epsilon_i
-            + \langle Z_i,C_2\rangle + 0.5X_{i2},
-\qquad \epsilon_i \sim \operatorname{Unif}(-1,1),
+\log T_i = \{\langle Z_i,C_1\rangle + X_{i1}\}\epsilon_i + \langle Z_i,C_2\rangle + 0.5X_{i2}, \qquad \epsilon_i \sim \mathrm{Unif}(-1,1),
 $$
 
 $$
-\log C_i = 4X_{i1} + 4X_{i2} + U_i - 2,
-\qquad U_i \sim \operatorname{Logistic}(0,4).
+\log C_i = 4X_{i1} + 4X_{i2} + U_i - 2, \qquad U_i \sim \mathrm{Logistic}(0,4).
 $$
 
 The implementation retains `T_i = pmax(exp(log(T_i)), 1e-10)`, the observed time `Y_i = min(T_i, C_i)`, and the original event indicator `C_i > T_i`. The fixed censoring shift targets the manuscript's approximately 50% censoring setting; the observed percentage varies across random samples.
@@ -235,8 +230,3 @@ R CMD check --no-manual sfcqr_0.1.1.tar.gz
 The repository includes a GitHub Actions workflow that checks the package on Linux, macOS, and Windows. Before publishing, complete the author and maintainer information in `DESCRIPTION` and the copyright-holder information in both `LICENSE` and `LICENSE.md`.
 
 Follow the [GitHub publication guide](GITHUB_SUBMISSION.md) for repository creation, authentication, pushing the source, and publishing a tagged release.
-# sfcqr
-# sfcqr
-# sfcqr
-# sfcqr
-# sfcqr
