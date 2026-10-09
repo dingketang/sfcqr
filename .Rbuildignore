@@ -1,0 +1,13 @@
+^\.git$
+^\.github$
+^\.gitignore$
+^\.Rbuildignore$
+^\.Rproj\.user$
+^.*\.Rproj$
+^\.DS_Store$
+^GITHUB_SUBMISSION\.md$
+^LICENSE\.md$
+^examples$
+^.*\.Rcheck$
+^.*\.tar\.gz$
+^.*\.zip$

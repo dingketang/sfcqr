@@ -1,0 +1,25 @@
+Package: sfcqr
+Type: Package
+Title: Supervised Functional Censored Quantile Regression
+Version: 0.1.1
+Authors@R: person("Package", "Maintainer", email = "maintainer@example.com",
+    role = c("aut", "cre"))
+Description: Fits supervised functional censored quantile regression models
+    with image basis expansions, inverse censoring probability weights,
+    penalized quantile covariance dimension reduction, and integrated
+    information criteria. Provides the manuscript's main simulation setting,
+    smaller illustrative data,
+    coefficient reconstruction, and prediction on new observations.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports:
+    quantreg (>= 6.1),
+    survival,
+    splines,
+    stats
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
