@@ -18,10 +18,10 @@ test_that("unpenalized first component preserves quantile covariance extraction"
   d <- simulate_sfcqr_data(n = 100, censoring = 0, seed = 9)
   x <- d$Z %*% d$Bxy
   fit <- plsfit_cqcov(x, log(d$Y), 2, rep(1, 100), d$delta)
-  x0 <- sweep(sweep(x, 2, fit$Xmean, "-"), 2, fit$Xscale, "/")
+  x0 <- sweep(x, 2, fit$Xmean, "-")
   manual <- as.numeric(cq_cov(x0, log(d$Y), fit$Y_quantile, rep(1, 100), .5))
   manual <- manual / sqrt(sum(manual^2))
-  expect_equal(unname(fit$W_scaled[, 1]), manual, tolerance = 1e-10)
+  expect_equal(unname(fit$W[, 1]), manual, tolerance = 1e-10)
 })
 
 test_that("rank truncation and scalar penalization are safe", {

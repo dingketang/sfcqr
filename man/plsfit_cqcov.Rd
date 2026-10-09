@@ -26,7 +26,10 @@ plsfit_cqcov(
 
 \item{ncomp}{Maximum number of components.}
 
-\item{weights}{Nonnegative inverse censoring probability weights.}
+\item{weights}{Finite, nonnegative inverse censoring probability weights.
+These may already include the event indicator. Entries with
+\code{delta == 0} are set to zero before constructing the IPCW quantile
+and the supervised covariance.}
 
 \item{delta}{Event indicators, with 1 denoting an observed event.}
 
@@ -41,18 +44,41 @@ normalized; this direct covariance algorithm does not iterate.}
 
 \item{tau}{Target quantile in (0, 1).}
 
-\item{scale.X}{Whether to standardize predictors before dimension reduction.}
+\item{scale.X}{Whether to standardize predictors as a coordinate
+reparameterization. The constraint is defined in the original predictor
+coordinates, so standardization preserves the fitted component space.}
 
-\item{grid}{Optional quantile grid for the Peng-Huang fit.}
+\item{grid}{Retained for source compatibility. The IPCW marginal quantile
+is obtained from an empirical CDF and does not use a regression quantile grid.}
 }
 \value{
 A list containing raw and standardized projection matrices \code{W} and
 \code{W_scaled}, scores \code{U}, centering and scaling vectors, the scaled penalty,
 residual-coordinate directions, and the number of extracted components.
+\code{directions_raw} contains the residual-coordinate directions on the original
+predictor scale, \code{metric} is their \code{I + lambda * P} metric,
+\code{metric_scaled} is its standardized-coordinate counterpart,
+and \code{ipcw_weights} records the event weights used by the procedure.
 In particular, \code{sweep(X, 2, Xmean, "-") \%*\% W} equals \code{U}.
 }
 \description{
 Supervised dimension reduction using censored quantile covariance
+}
+\details{
+The extraction weights in the original residual-predictor
+coordinates maximize squared censored quantile covariance subject to
+\verb{w' (I + lambda * P) w = 1}. With \code{D = diag(Xscale)}, the equivalent
+standardized metric is \verb{D^(-1) (I + lambda * P) D^(-1)}.
+The marginal threshold is the generalized inverse of the normalized
+IPCW empirical CDF, without interpolation. A common rescaling of the
+IPCW weights is used internally for numerical stability; it changes
+neither that quantile nor the normalized extraction directions.
+Extraction stops when the residual covariance is numerically zero relative
+to the original predictor and weighted-indicator moments.
+Supplied weights must be estimated using the original event indicators;
+masking censored weights here cannot undo changes to the fitted
+censoring distribution. When using \code{\link[=get_weights]{get_weights()}}, set
+\code{force_last_event = FALSE}.
 }
 \examples{
 d <- simulate_sfcqr_data(n = 100, censoring = 0, seed = 1)

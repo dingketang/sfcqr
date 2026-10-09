@@ -22,7 +22,7 @@ test_that("marginal IPCW keeps observation order and exposes the last event rule
   Y <- c(1, 2, 3)
   delta <- c(1, 1, 0)
   X <- matrix(numeric(0), 3, 0)
-  expect_equal(get_weights(Y, X, delta, force_last_event = TRUE), c(1, 1, 1))
+  expect_equal(get_weights(Y, X, delta, force_last_event = TRUE), c(1, 1, 0))
   expect_equal(get_weights(Y, X, delta, force_last_event = FALSE), c(1, 1, 0))
   expect_equal(delta, c(1, 1, 0))
 })

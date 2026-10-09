@@ -13,12 +13,12 @@ sfcqr(
   censoring_method = "beran",
   bandwidth = NULL,
   min_survival = 1e-04,
-  force_last_event = TRUE,
+  force_last_event = FALSE,
   scale.X = TRUE,
   penalty = NULL,
   grid = NULL,
-  criterion = c("IBIC", "IGACV", "IAIC"),
-  beran_covariates = c("first", "all")
+  criterion = c("IGACV", "IAIC", "IBIC"),
+  beran_covariates = c("all", "first")
 )
 }
 \arguments{
@@ -42,18 +42,19 @@ scalar covariates, marginal weights are used.}
 
 \item{bandwidth, min_survival, force_last_event}{Passed to \code{\link[=get_weights]{get_weights()}}.}
 
-\item{scale.X}{Standardize basis predictors during component extraction.}
+\item{scale.X}{Standardize basis predictors as an equivalent coordinate
+reparameterization; the constraint remains on the original basis scale.}
 
 \item{penalty}{Optional supplied positive semidefinite basis penalty matrix.}
 
 \item{grid}{Optional strictly increasing quantile grid in (0, 1) spanning
 \code{tau}. By default, uses the grid rule of \code{quantreg} with \code{tau} included.}
 
-\item{criterion}{Selection criterion: \code{"IBIC"} (the original fitting script),
-\code{"IGACV"} (the manuscript), or \code{"IAIC"}.}
+\item{criterion}{Selection criterion: \code{"IGACV"} (default, as in the
+manuscript), \code{"IAIC"}, or \code{"IBIC"}.}
 
-\item{beran_covariates}{\code{"first"} retains the original fitting script;
-\code{"all"} conditions on every scalar covariate as in the manuscript.}
+\item{beran_covariates}{\code{"all"} (default) conditions on every scalar
+covariate; \code{"first"} requests first-column conditioning.}
 }
 \value{
 An object of class \code{sfcqr} containing \code{coefficients}, the raw-design

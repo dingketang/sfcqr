@@ -2,23 +2,21 @@
 
 This guide publishes the package source as a GitHub repository and a versioned release. The delivered files are local; a remote repository has not been created or uploaded. Submission to CRAN is a separate process with its own policies and checks.
 
-## 1. Copy the package into an independent directory
+## 1. Open the package source directory
 
-The delivered package is a subdirectory of the manuscript project. Copy it into its own directory before initializing Git so that your repository contains only the package. If `~/sfcqr` already exists, choose a different, empty destination.
+Extract the delivered GitHub source archive into an independent directory. Open the package directory containing `DESCRIPTION`, `R`, `man`, `tests`, and `.github`; it should be the repository root. Keep the hidden `.github` directory and `.gitignore` file when copying the source.
 
 ```sh
-cp -R '/Users/tangdingke/Documents/ChatGPT/JRSSC revision/sfcqr' ~/sfcqr
-cd ~/sfcqr
+cd /path/to/sfcqr
 ```
 
-Run all subsequent Git commands from `~/sfcqr`.
+Run the following Git commands from this directory. Upload this package source rather than the manuscript project or an installed R library directory.
 
 ## 2. Complete the release metadata and run the checks
 
-Before publishing:
+Confirm the release metadata before publishing:
 
-- Replace the author and maintainer placeholders in `DESCRIPTION`, including `maintainer@example.com`, with the real names and maintainer email address.
-- Replace the copyright-holder placeholders in both `LICENSE` and `LICENSE.md`. Update the year if needed, and confirm that the included MIT license is appropriate for your code.
+- `DESCRIPTION` identifies Dingke Tang (`dtang@uottawa.ca`) as the author and maintainer; `LICENSE` and `LICENSE.md` identify Dingke Tang as the 2026 copyright holder. The delivered source uses the MIT license.
 - Replace `USERNAME/sfcqr` in the README with your actual repository path.
 
 Once your GitHub username is known, add these fields to `DESCRIPTION`:
@@ -37,11 +35,12 @@ install.packages(c("quantreg", "survival", "testthat"))
 From the independent copy, install the package, run the README example script, and build and check the source package:
 
 ```sh
+Rscript -e 'testthat::test_local(".")'
 R CMD INSTALL .
 Rscript examples/quickstart.R
 cd ..
 R CMD build sfcqr
-R CMD check --no-manual sfcqr_0.1.1.tar.gz
+R CMD check --no-manual sfcqr_0.1.2.tar.gz
 cd sfcqr
 ```
 
@@ -53,14 +52,14 @@ Sign in to GitHub and create a repository named `sfcqr`, with your preferred pub
 
 ## 4. Initialize Git and make the first commit
 
-Run the following commands in `~/sfcqr`:
+Run the following commands in the package source directory:
 
 ```sh
 git init -b main
 git status
 git add .
 git diff --cached --stat
-git commit -m 'Initial release of sfcqr 0.1.1'
+git commit -m 'Initial release of sfcqr 0.1.2'
 ```
 
 Confirm that the staged file list contains only package files. If Git reports that your commit identity is missing, set it for this repository and retry the commit:
@@ -68,7 +67,7 @@ Confirm that the staged file list contains only package files. If Git reports th
 ```sh
 git config user.name 'YOUR NAME'
 git config user.email 'YOUR EMAIL'
-git commit -m 'Initial release of sfcqr 0.1.1'
+git commit -m 'Initial release of sfcqr 0.1.2'
 ```
 
 ## 5. Connect the remote repository and push
@@ -88,17 +87,17 @@ Authenticate using a personal access token, Git Credential Manager, or GitHub CL
 After pushing, open the repository's **Actions** tab and inspect the `R-CMD-check` workflow. The included workflow installs dependencies and checks the package with the current R release on Linux, macOS, and Windows. When all three platform checks pass, tag the release:
 
 ```sh
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.1.2
+git push origin v0.1.2
 ```
 
-In GitHub's **Releases** section, create a release from `v0.1.1`. Add a short description of the package and attach the `sfcqr_0.1.1.tar.gz` file produced by `R CMD build`. This archive is an R source package; users need R and the package dependencies to install it.
+In GitHub's **Releases** section, create a release from `v0.1.2`. Add a short description of the package and attach the `sfcqr_0.1.2.tar.gz` file produced by `R CMD build`. This archive is an R source package; users need R and the package dependencies to install it.
 
 Other users can then install the tagged version in R:
 
 ```r
 install.packages("remotes")
-remotes::install_github("USERNAME/sfcqr", ref = "v0.1.1")
+remotes::install_github("USERNAME/sfcqr", ref = "v0.1.2")
 library(sfcqr)
 ```
 
@@ -112,4 +111,4 @@ git commit -m 'Describe the change'
 git push
 ```
 
-Use a new tag for each published version, such as `v0.1.2` for the next release. The GitHub Actions configuration follows the [official r-lib/actions R package check examples](https://github.com/r-lib/actions/tree/v2/examples).
+Use a new tag for each published version, such as `v0.1.3` for the next release. The GitHub Actions configuration follows the [official r-lib/actions R package check examples](https://github.com/r-lib/actions/tree/v2/examples).

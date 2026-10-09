@@ -22,7 +22,8 @@ fits <- setNames(
     criterion = "IGACV",
     censoring_method = "beran",
     beran_covariates = "all",
-    bandwidth = nrow(dat$X)^(-1/6)
+    bandwidth = nrow(dat$X)^(-1/6),
+    force_last_event = FALSE
   )),
   paste0("tau=", taus)
 )

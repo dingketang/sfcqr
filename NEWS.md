@@ -1,3 +1,24 @@
+# sfcqr 0.1.2
+
+- Component extraction now solves `(I + lambda * P) a = q` and normalizes
+  the direction in the same penalized metric.
+- Predictor standardization is an equivalent coordinate transformation of
+  the original basis metric; changing `scale.X` preserves the component space.
+- The marginal event-time quantile is obtained by inverting the normalized
+  IPCW empirical CDF, using positive event weights and no interpolation.
+- Censored observations have zero supervision weight. `get_weights()` always
+  uses the original event indicator in its numerator; the optional largest-time
+  adjustment affects the censoring-distribution fit only.
+- Fitting defaults are now `criterion = "IGACV"`, `beran_covariates = "all"`,
+  and `force_last_event = FALSE`. The earlier criterion and censoring options
+  remain available when explicitly selected.
+- `plsfit_cqcov()` exposes original-scale extraction directions, their metric,
+  and the effective IPCW weights for numerical verification.
+- Added regression checks for the penalized optimizer, IPCW threshold,
+  event-indicator preservation, scaling, deflation, and coefficient mapping.
+- These corrections can change fitted values and selected models relative
+  to version 0.1.1; the previous extraction algorithm is not retained.
+
 # sfcqr 0.1.1
 
 - English README and GitHub submission guide.

@@ -64,14 +64,15 @@
 #' @param censoring_method Censoring model passed to [get_weights()]. With no
 #'   scalar covariates, marginal weights are used.
 #' @param bandwidth,min_survival,force_last_event Passed to [get_weights()].
-#' @param scale.X Standardize basis predictors during component extraction.
+#' @param scale.X Standardize basis predictors as an equivalent coordinate
+#'   reparameterization; the constraint remains on the original basis scale.
 #' @param penalty Optional supplied positive semidefinite basis penalty matrix.
 #' @param grid Optional strictly increasing quantile grid in (0, 1) spanning
 #'   `tau`. By default, uses the grid rule of `quantreg` with `tau` included.
-#' @param criterion Selection criterion: `"IBIC"` (the original fitting script),
-#'   `"IGACV"` (the manuscript), or `"IAIC"`.
-#' @param beran_covariates `"first"` retains the original fitting script;
-#'   `"all"` conditions on every scalar covariate as in the manuscript.
+#' @param criterion Selection criterion: `"IGACV"` (default, as in the
+#'   manuscript), `"IAIC"`, or `"IBIC"`.
+#' @param beran_covariates `"all"` (default) conditions on every scalar
+#'   covariate; `"first"` requests first-column conditioning.
 #' @return An object of class `sfcqr` containing `coefficients`, the raw-design
 #'   `intercept`, scalar coefficients `coef_X`, basis coefficients
 #'   `coef_estimate`, selected `M` and `lambda`, the criterion matrix `tuning`,
@@ -87,10 +88,10 @@
 sfcqr <- function(data, tau = 0.5, Mmax = 30,
                   lambda_list = c(0, 1, 10, 100, 1000, 1e6),
                   image_dim = NULL, censoring_method = "beran", bandwidth = NULL,
-                  min_survival = 1e-4, force_last_event = TRUE, scale.X = TRUE,
+                  min_survival = 1e-4, force_last_event = FALSE, scale.X = TRUE,
                   penalty = NULL, grid = NULL,
-                  criterion = c("IBIC", "IGACV", "IAIC"),
-                  beran_covariates = c("first", "all")) {
+                  criterion = c("IGACV", "IAIC", "IBIC"),
+                  beran_covariates = c("all", "first")) {
   if (!is.list(data) || !all(c("Y", "delta", "Z", "Bxy") %in% names(data))) {
     stop("data must be a list containing Y, delta, Z, and Bxy.")
   }

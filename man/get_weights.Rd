@@ -11,8 +11,8 @@ get_weights(
   method = NULL,
   bandwidth = NULL,
   min_survival = 1e-04,
-  force_last_event = TRUE,
-  beran_covariates = c("first", "all")
+  force_last_event = FALSE,
+  beran_covariates = c("all", "first")
 )
 }
 \arguments{
@@ -35,13 +35,14 @@ is accepted as an alias for \code{"beran"}.}
 \item{min_survival}{Finite lower bound on estimated survival, strictly
 positive and at most one.}
 
-\item{force_last_event}{Whether to locally set the indicator for the first
-observation attaining the maximum observed time to one. Defaults to
-\code{TRUE} to preserve the supplied research code.}
+\item{force_last_event}{Whether to set the indicator for the first
+observation attaining the maximum observed time to one when fitting
+censoring survival only. Defaults to \code{FALSE}. The original event
+indicators are always retained in the weight numerator.}
 
-\item{beran_covariates}{Use \code{"first"} for the original fitting script's
-first-column conditioning, or \code{"all"} for the multivariate Gaussian
-kernel used in Section S4 of the manuscript.}
+\item{beran_covariates}{Use \code{"all"} (the default) for the multivariate
+Gaussian kernel used in Section S4 of the manuscript, or \code{"first"}
+for conditioning on the first covariate only.}
 }
 \value{
 A finite numeric vector of nonnegative weights in observation order.
@@ -53,11 +54,13 @@ censoring survival model.
 \details{
 All methods evaluate the right continuous survival function at
 \eqn{Y_i}, including a censoring event at the evaluation time. If
-\code{force_last_event = TRUE}, its modified event indicator is used both
-to fit censoring survival and in the weight numerator; the caller's input
-is not modified. With no censored observations all weights equal one.
+\code{force_last_event = TRUE}, a separate copy of the event indicators
+is modified only to fit censoring survival. The caller's input and the
+weight numerator are not modified, so every censored observation has
+zero weight. With no censored observations all weights equal one; with
+no observed response events all weights equal zero.
 
-By default the Beran method uses the first covariate only. Its bandwidth
+By default the Beran method uses every covariate column. Its bandwidth
 retains the original code's heuristic based on the full number of
 covariates; specify \code{bandwidth} to control this directly. Parametric
 and Cox models use every covariate column. These modeling choices and the

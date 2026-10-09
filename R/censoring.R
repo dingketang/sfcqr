@@ -113,20 +113,23 @@ beran_Ghat_curve <- function(Y, delta, X, x0, times, h) {
 #'   \eqn{n^{-1/(p+4)}}, where \eqn{p} is the number of columns in \code{X}.
 #' @param min_survival Finite lower bound on estimated survival, strictly
 #'   positive and at most one.
-#' @param force_last_event Whether to locally set the indicator for the first
-#'   observation attaining the maximum observed time to one. Defaults to
-#'   \code{TRUE} to preserve the supplied research code.
-#' @param beran_covariates Use \code{"first"} for the original fitting script's
-#'   first-column conditioning, or \code{"all"} for the multivariate Gaussian
-#'   kernel used in Section S4 of the manuscript.
+#' @param force_last_event Whether to set the indicator for the first
+#'   observation attaining the maximum observed time to one when fitting
+#'   censoring survival only. Defaults to \code{FALSE}. The original event
+#'   indicators are always retained in the weight numerator.
+#' @param beran_covariates Use \code{"all"} (the default) for the multivariate
+#'   Gaussian kernel used in Section S4 of the manuscript, or \code{"first"}
+#'   for conditioning on the first covariate only.
 #' @return A finite numeric vector of nonnegative weights in observation order.
 #' @details All methods evaluate the right continuous survival function at
 #'   \eqn{Y_i}, including a censoring event at the evaluation time. If
-#'   \code{force_last_event = TRUE}, its modified event indicator is used both
-#'   to fit censoring survival and in the weight numerator; the caller's input
-#'   is not modified. With no censored observations all weights equal one.
+#'   \code{force_last_event = TRUE}, a separate copy of the event indicators
+#'   is modified only to fit censoring survival. The caller's input and the
+#'   weight numerator are not modified, so every censored observation has
+#'   zero weight. With no censored observations all weights equal one; with
+#'   no observed response events all weights equal zero.
 #'
-#'   By default the Beran method uses the first covariate only. Its bandwidth
+#'   By default the Beran method uses every covariate column. Its bandwidth
 #'   retains the original code's heuristic based on the full number of
 #'   covariates; specify \code{bandwidth} to control this directly. Parametric
 #'   and Cox models use every covariate column. These modeling choices and the
@@ -138,11 +141,11 @@ beran_Ghat_curve <- function(Y, delta, X, x0, times, h) {
 #' get_weights(Y, matrix(numeric(0), 4, 0), delta, method = "marginal")
 #' get_weights(Y, c(0, 0.1, 0.2, 0.3), delta, method = "beran")
 get_weights <- function(Y, X, delta, method = NULL, bandwidth = NULL,
-                        min_survival = 1e-4, force_last_event = TRUE,
-                        beran_covariates = c("first", "all")) {
+                        min_survival = 1e-4, force_last_event = FALSE,
+                        beran_covariates = c("all", "first")) {
   response <- .validate_response(Y, delta)
   Y <- response$Y
-  delta <- response$delta
+  delta_obs <- response$delta
   n <- length(Y)
   X <- .numeric_matrix(X, "X", nrow_expected = n, allow_empty = TRUE)
   if (is.null(method)) method <- "loglogistic"
@@ -162,23 +165,25 @@ get_weights <- function(Y, X, delta, method = NULL, bandwidth = NULL,
     bandwidth <- .scalar_number(bandwidth, "bandwidth", lower = 0)
     if (bandwidth == 0) stop("bandwidth must be strictly positive.", call. = FALSE)
   }
-  if (all(delta == 1)) return(rep(1, n))
-  if (force_last_event) delta[which.max(Y)] <- 1
-  if (all(delta == 1)) return(rep(1, n))
+  if (all(delta_obs == 1)) return(rep(1, n))
+  if (all(delta_obs == 0)) return(rep(0, n))
+  delta_for_G <- delta_obs
+  if (force_last_event) delta_for_G[which.max(Y)] <- 1
+  if (all(delta_for_G == 1)) return(as.numeric(delta_obs))
   if (ncol(X) == 0L) method <- "marginal"
 
   if (method == "marginal") {
-    fit <- .censor_model(survival::survfit(survival::Surv(Y, 1 - delta) ~ 1), method)
+    fit <- .censor_model(survival::survfit(survival::Surv(Y, 1 - delta_for_G) ~ 1), method)
     index <- findInterval(Y, fit$time)
     Ghat <- c(1, as.numeric(fit$surv))[index + 1L]
   } else if (method == "beran") {
     if (is.null(bandwidth)) bandwidth <- n^(-1 / (ncol(X) + 4))
     X_kernel <- if (beran_covariates == "all") X else X[, 1L, drop = FALSE]
     Ghat <- vapply(seq_len(n), function(i) {
-      .beran_curve(Y, delta, X_kernel, X_kernel[i, ], Y[i], bandwidth)
+      .beran_curve(Y, delta_for_G, X_kernel, X_kernel[i, ], Y[i], bandwidth)
     }, numeric(1))
   } else {
-    dat <- data.frame(Y = Y, cens = 1 - delta, X)
+    dat <- data.frame(Y = Y, cens = 1 - delta_for_G, X)
     names(dat) <- c("Y", "cens", paste0("X", seq_len(ncol(X))))
     formula <- survival::Surv(Y, cens) ~ .
     if (method %in% c("lognormal", "loglogistic")) {
@@ -218,5 +223,5 @@ get_weights <- function(Y, X, delta, method = NULL, bandwidth = NULL,
   if (length(Ghat) != n || any(!is.finite(Ghat)) || any(Ghat < 0 | Ghat > 1)) {
     stop("The ", method, " censoring model produced invalid survival estimates.", call. = FALSE)
   }
-  as.numeric(delta / pmax(Ghat, min_survival))
+  as.numeric(delta_obs / pmax(Ghat, min_survival))
 }

@@ -1,8 +1,8 @@
 # sfcqr
 
-`sfcqr` is an R package for supervised functional censored quantile regression with right-censored outcomes, scalar covariates, and two-dimensional image predictors. It organizes the supplied research code into an installable package with documented functions, coefficient reconstruction, prediction, reproducible simulations, tests, and GitHub Actions.
+`sfcqr` is an R package for supervised functional censored quantile regression with right-censored outcomes, scalar covariates, and two-dimensional image predictors. The package provides documented fitting functions, coefficient reconstruction, prediction, reproducible simulations, tests, and GitHub Actions.
 
-The model uses an image basis expansion, inverse censoring probability weights, supervised component extraction, a smoothing penalty, and `quantreg::crq(..., method = "PengHuang")`. The example below uses the data-generating mechanism from the main simulation and the manuscript's IGACV tuning and conditional censoring settings.
+The model uses an image basis expansion, inverse censoring probability weights, penalized quantile covariance component extraction, and `quantreg::crq(..., method = "PengHuang")` for the final quantile regression. Version 0.1.2 defaults to IGACV tuning, Beran conditioning on all scalar covariates, and the original event indicators. The example below uses the main simulation mechanism and these settings.
 
 ## Installation
 
@@ -15,7 +15,7 @@ install.packages(c("quantreg", "survival"))
 From the directory containing the delivered source archive:
 
 ```r
-install.packages("sfcqr_0.1.1.tar.gz", repos = NULL, type = "source")
+install.packages("sfcqr_0.1.2.tar.gz", repos = NULL, type = "source")
 library(sfcqr)
 ```
 
@@ -25,11 +25,11 @@ Alternatively, from the parent of the package source directory, run:
 R CMD INSTALL sfcqr
 ```
 
-Install the current version directly from GitHub:
+After the repository is published, replace `USERNAME` with its owner:
 
 ```r
 install.packages("remotes")
-remotes::install_github("dingketang/sfcqr", ref = "main")
+remotes::install_github("USERNAME/sfcqr", ref = "v0.1.2")
 ```
 
 ## Reproducible example: the main simulation setting
@@ -54,21 +54,26 @@ This example follows the main simulation in Section 5.1 of the manuscript and th
 Writing `B_ell` for the tensor-product basis functions, the image and coefficient surfaces are
 
 $$
-Z_i(s) = \sum_{\ell=1}^{36} A_{i\ell}\ell^{-1/4}B_{\ell}(s), \qquad A_{i\ell} \sim \mathrm{Unif}(0,4),
+Z_i(s) = \sum_{\ell=1}^{36} A_{i\ell}\ell^{-1/4}B_\ell(s),
+\qquad A_{i\ell} \sim \operatorname{Unif}(0,4),
 $$
 
 $$
-C_1(s) = B_1(s) + B_8(s), \qquad C_2(s) = 0.8B_{22}(s) + 1.2B_{29}(s).
+C_1(s) = B_1(s) + B_8(s),
+\qquad C_2(s) = 0.8B_{22}(s) + 1.2B_{29}(s).
 $$
 
 The main-branch generator uses
 
 $$
-\log T_i = \{\langle Z_i,C_1\rangle + X_{i1}\}\epsilon_i + \langle Z_i,C_2\rangle + 0.5X_{i2}, \qquad \epsilon_i \sim \mathrm{Unif}(-1,1),
+\log T_i = \{\langle Z_i,C_1\rangle + X_{i1}\}\epsilon_i
+            + \langle Z_i,C_2\rangle + 0.5X_{i2},
+\qquad \epsilon_i \sim \operatorname{Unif}(-1,1),
 $$
 
 $$
-\log C_i = 4X_{i1} + 4X_{i2} + U_i - 2, \qquad U_i \sim \mathrm{Logistic}(0,4).
+\log C_i = 4X_{i1} + 4X_{i2} + U_i - 2,
+\qquad U_i \sim \operatorname{Logistic}(0,4).
 $$
 
 The implementation retains `T_i = pmax(exp(log(T_i)), 1e-10)`, the observed time `Y_i = min(T_i, C_i)`, and the original event indicator `C_i > T_i`. The fixed censoring shift targets the manuscript's approximately 50% censoring setting; the observed percentage varies across random samples.
@@ -100,7 +105,8 @@ fits <- setNames(
     criterion = "IGACV",
     censoring_method = "beran",
     beran_covariates = "all",
-    bandwidth = nrow(dat$X)^(-1/6)
+    bandwidth = nrow(dat$X)^(-1/6),
+    force_last_event = FALSE
   )),
   paste0("tau=", taus)
 )
@@ -139,9 +145,7 @@ Rscript examples/quickstart.R
 
 A successful run ends with `Main-setting example passed at tau = 0.3, 0.5, and 0.7.` The checks verify the main-setting data dimensions, observed-data construction, finite fitted coefficients, positive predictions, and agreement between `predict()` and direct reconstruction from the original-scale coefficients.
 
-In the validated R 4.4.1 / quantreg 6.1 environment, this example reported 54.8% observed censoring and, at `tau = 0.5`, selected two components and `lambda = 1`, with IGACV approximately 0.403219. All three quantiles passed the checks. The full example took approximately 17 seconds on the validation machine; runtime depends on the machine and R installation.
-
-This example fits all three quantiles to one simulated dataset. The manuscript also considers `n = 1000` and `n = 2000` and summarizes 1,000 Monte Carlo replications; running the example does not reproduce that full benchmark.
+This example fits all three quantiles to one simulated dataset. The manuscript also considers `n = 1000` and `n = 2000` and summarizes 1,000 Monte Carlo replications. The example and software tests validate the current implementation; they do not establish that earlier manuscript tables were generated with this release.
 
 For exact correspondence with the supplied generator, the one-dimensional basis is `splines::bs(1:100, df = 6, degree = 3, intercept = TRUE)`, followed by `qr.Q(qr(...))`. Tensor columns use the original ordering with the first basis index as the outer loop and the second as the inner loop; columns are normalized. Functional inner products are discrete pixel sums, matching the supplied code.
 
@@ -171,22 +175,38 @@ sfcqr(
   censoring_method = "beran",
   bandwidth = NULL,
   min_survival = 1e-4,
-  force_last_event = TRUE,
+  force_last_event = FALSE,
   scale.X = TRUE,
   penalty = NULL,
   grid = NULL,
-  criterion = "IBIC",
-  beran_covariates = "first"
+  criterion = "IGACV",
+  beran_covariates = "all"
 )
 ```
 
-`tau` is the target quantile, `Mmax` is the maximum number of supervised components, and `lambda_list` contains the candidate smoothing penalties. `image_dim = c(nrow, ncol)` specifies the image grid; its product must equal `ncol(Z)`. A supplied `penalty` must be a `q x q` matrix. `scale.X` controls standardization of basis projections during supervised component extraction. `grid` optionally supplies the quantile grid used to compare candidate models.
+`tau` is the target quantile, `Mmax` is the maximum number of supervised components, and `lambda_list` contains the candidate smoothing penalties. `image_dim = c(nrow, ncol)` specifies the image grid; its product must equal `ncol(Z)`. A supplied `penalty` must be a `q x q` matrix. `scale.X` controls numerical standardization of basis projections during supervised component extraction; both settings preserve the constraint defined in the original basis coordinates. `grid` optionally supplies the quantile grid used to compare candidate models.
 
-`criterion` accepts `"IBIC"`, `"IGACV"`, or `"IAIC"`. The default `"IBIC"` preserves the original fitting script's behavior; the main-setting example explicitly selects `"IGACV"`, as in the manuscript.
+`criterion` accepts `"IGACV"`, `"IAIC"`, or `"IBIC"`, with `"IGACV"` as the default. To use the earlier information-criterion choice, specify `criterion = "IBIC"` explicitly.
 
-Censoring weights support `"beran"`, `"marginal"`, `"lognormal"`, `"loglogistic"`, and `"cox"`. For Beran weights, `beran_covariates = "all"` conditions on all columns of `X`, as specified in Supplementary Section S4. The default `"first"` retains the original fitting script's use of the first column. The default bandwidth is `n^(-1 / (p + 4))`, where `p = ncol(X)`; the example supplies `n^(-1/6)` explicitly because there are two covariates. With no scalar covariates, the package uses marginal weights. The original spelling `"bernan"` remains a compatibility alias.
+Censoring weights support `"beran"`, `"marginal"`, `"lognormal"`, `"loglogistic"`, and `"cox"`. For Beran weights, `beran_covariates = "all"` conditions on all columns of `X`, as specified in Supplementary Section S4. The default is `"all"`; `"first"` remains available as an explicit option. The default bandwidth is `n^(-1 / (p + 4))`, where `p = ncol(X)`; the example supplies `n^(-1/6)` explicitly because there are two covariates. With no scalar covariates, the package uses marginal weights. The original spelling `"bernan"` remains a compatibility alias.
 
-`min_survival` bounds the estimated censoring survival probability below, and weights use the right-continuous survival probability at the observed time, `G(Y)`. `force_last_event = TRUE` retains the original weight-estimation convention of treating the subject with the largest observed time as an event. This affects the censoring weights only; it does not change the input event indicators or the final censored quantile regression model. Set it to `FALSE` to disable the adjustment.
+`min_survival` bounds the estimated censoring survival probability below, and weights use the right-continuous survival probability at the observed time, `G(Y)`, including censoring events tied at that time. The default `force_last_event = FALSE` fits that distribution using the original event indicators. The numerator of each IPCW weight is always the original `delta`, so censored observations have zero supervision weight. Setting `force_last_event = TRUE` explicitly applies the legacy largest-time adjustment to the censoring-distribution fit only; it does not change the weight numerator or the final quantile regression event indicators.
+
+## Component extraction and changes in version 0.1.2
+
+For a censored quantile covariance vector `q` and a basis penalty `P`, extraction solves
+
+$$
+A_\lambda = I + \lambda P,\qquad
+A_\lambda a = q,\qquad
+w = \frac{a}{\sqrt{a^\top A_\lambda a}}.
+$$
+
+This gives `t(w) %*% A_lambda %*% w = 1` in the original residual-predictor coordinates. When `scale.X = TRUE`, the code uses an equivalent coordinate transformation, including the Euclidean part of the metric, then maps the scores and fitted coefficients back to the original basis. `plsfit_cqcov()` returns these directions in `directions_raw` and the metric in `metric`; the final projection matrix `W` also includes the deflation mappings.
+
+The marginal event-time threshold is the first observed time at which the normalized IPCW empirical CDF reaches `tau`. It uses the original event indicators and does not interpolate between observed times or fit an intercept-only `crq()` model. The `grid` argument continues to control candidate quantile regressions and their integrated criteria, but is unused by this empirical threshold.
+
+Version 0.1.2 corrects the extraction direction and threshold and changes the defaults listed above. Fitted values and selected models can therefore differ from version 0.1.1. Explicitly specifying earlier tuning or censoring options does not restore the earlier component algorithm. See [NEWS.md](NEWS.md) for the release changes.
 
 ## Results and prediction
 
@@ -216,17 +236,24 @@ See `?sfcqr`, `?simulate_sfcqr_main`, and `?get_weights` for details. `gene_data
 - Added checks for incompatible dimensions and handling for dropped matrix dimensions, constant columns, zero-variance components, singular matrices, and unavailable quantile fits.
 - Unified centering, scaling, and component mappings between fitting and prediction, and converted fitted coefficients back to the original input scale. The reconstruction checks in the example verify this mapping.
 - Implemented the original `imager::imgradient()` default `scheme = 3` rotation-invariant `3 x 3` difference stencil and replicated boundaries in base R, applying the stencil twice in each direction to construct the smoothing penalty. The implementation was checked numerically against the original gradient scheme, allowing removal of the `imager` dependency. Existing penalty matrices can also be supplied directly.
-- Added the supplied main-branch data generator and explicit options for the manuscript's IGACV selection and Beran conditioning on all scalar covariates, while retaining the original fitting defaults for compatibility.
+- Added the supplied main-branch data generator, IGACV selection, and Beran conditioning on all scalar covariates; version 0.1.2 uses these fitting options by default.
+- Aligned the component optimizer and IPCW empirical threshold with the stated mathematical procedure and preserved the original event indicators in the supervision weights.
 
 ## Development and GitHub publication
 
-Install `testthat` before running the checks. From the parent of the source directory:
+Install `testthat` before running the checks. To run the test suite from the source directory:
+
+```sh
+Rscript -e 'testthat::test_local(".")'
+```
+
+From the parent of the source directory:
 
 ```sh
 R CMD build sfcqr
-R CMD check --no-manual sfcqr_0.1.1.tar.gz
+R CMD check --no-manual sfcqr_0.1.2.tar.gz
 ```
 
-The repository includes a GitHub Actions workflow that checks the package on Linux, macOS, and Windows. Before publishing, complete the author and maintainer information in `DESCRIPTION` and the copyright-holder information in both `LICENSE` and `LICENSE.md`.
+The repository includes a GitHub Actions workflow that checks the package on Linux, macOS, and Windows. The author and maintainer is Dingke Tang (`dtang@uottawa.ca`), and the source is distributed under the MIT license.
 
 Follow the [GitHub publication guide](GITHUB_SUBMISSION.md) for repository creation, authentication, pushing the source, and publishing a tagged release.
