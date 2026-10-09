@@ -235,3 +235,4 @@ R CMD check --no-manual sfcqr_0.1.1.tar.gz
 The repository includes a GitHub Actions workflow that checks the package on Linux, macOS, and Windows. Before publishing, complete the author and maintainer information in `DESCRIPTION` and the copyright-holder information in both `LICENSE` and `LICENSE.md`.
 
 Follow the [GitHub publication guide](GITHUB_SUBMISSION.md) for repository creation, authentication, pushing the source, and publishing a tagged release.
+# sfcqr
