@@ -9,27 +9,7 @@ The model uses an image basis expansion, inverse censoring probability weights, 
 Install the runtime dependencies in R:
 
 ```r
-install.packages(c("quantreg", "survival"))
-```
-
-From the directory containing the delivered source archive:
-
-```r
-install.packages("sfcqr_0.1.2.tar.gz", repos = NULL, type = "source")
-library(sfcqr)
-```
-
-Alternatively, from the parent of the package source directory, run:
-
-```sh
-R CMD INSTALL sfcqr
-```
-
-After the repository is published, replace `USERNAME` with its owner:
-
-```r
-install.packages("remotes")
-remotes::install_github("USERNAME/sfcqr", ref = "v0.1.2")
+remotes::install_github("dingketang/sfcqr", ref = "v0.1.2")
 ```
 
 ## Reproducible example: the main simulation setting
