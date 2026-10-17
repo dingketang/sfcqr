@@ -35,7 +35,7 @@ Writing `B_ell` for the tensor-product basis functions, the image and coefficien
 
 $$
 Z_i(s) = \sum_{\ell=1}^{36} A_{i\ell}\ell^{-1/4}B_\ell(s),
-\qquad A_{i\ell} \sim \operatorname{Unif}(0,4),
+\qquad A_{i\ell} \sim \mathrm{Unif}(0,4),
 $$
 
 $$
@@ -48,12 +48,12 @@ The main-branch generator uses
 $$
 \log T_i = \{\langle Z_i,C_1\rangle + X_{i1}\}\epsilon_i
             + \langle Z_i,C_2\rangle + 0.5X_{i2},
-\qquad \epsilon_i \sim \operatorname{Unif}(-1,1),
+\qquad \epsilon_i \sim \mathrm{Unif}(-1,1),
 $$
 
 $$
 \log C_i = 4X_{i1} + 4X_{i2} + U_i - 2,
-\qquad U_i \sim \operatorname{Logistic}(0,4).
+\qquad U_i \sim \mathrm{Logistic}(0,4).
 $$
 
 The implementation retains `T_i = pmax(exp(log(T_i)), 1e-10)`, the observed time `Y_i = min(T_i, C_i)`, and the original event indicator `C_i > T_i`. The fixed censoring shift targets the manuscript's approximately 50% censoring setting; the observed percentage varies across random samples.
