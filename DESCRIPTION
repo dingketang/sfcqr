@@ -12,6 +12,8 @@ Description: Fits supervised functional censored quantile regression models
     Provides the manuscript's main simulation setting, smaller illustrative data,
     coefficient reconstruction, and prediction on new observations.
 License: MIT + file LICENSE
+URL: https://github.com/dingketang/sfcqr
+BugReports: https://github.com/dingketang/sfcqr/issues
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
 Imports:

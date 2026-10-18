@@ -4,13 +4,23 @@
 
 The model uses an image basis expansion, inverse censoring probability weights, penalized quantile covariance component extraction, and `quantreg::crq(..., method = "PengHuang")` for the final quantile regression. Version 0.1.2 defaults to IGACV tuning, Beran conditioning on all scalar covariates, and the original event indicators. The example below uses the main simulation mechanism and these settings.
 
+## Associated manuscript
+
+Tang, D., He, X., and Jiang, S. (2026). *Supervised functional censored quantile regression with application to mammogram data*. Manuscript under revision.
+
+The section references below refer to this manuscript and its supplementary material. Use `citation("sfcqr")` to obtain the manuscript citation from R.
+
 ## Installation
 
-Install the runtime dependencies in R:
+Install the current development version from GitHub:
 
 ```r
-remotes::install_github("dingketang/sfcqr", ref = "v0.1.2")
+install.packages("remotes")
+remotes::install_github("dingketang/sfcqr", ref = "main")
+library(sfcqr)
 ```
+
+For a fixed source snapshot, replace `"main"` with the full Git commit SHA of the version used for the analysis.
 
 ## Reproducible example: the main simulation setting
 
@@ -125,7 +135,17 @@ Rscript examples/quickstart.R
 
 A successful run ends with `Main-setting example passed at tau = 0.3, 0.5, and 0.7.` The checks verify the main-setting data dimensions, observed-data construction, finite fitted coefficients, positive predictions, and agreement between `predict()` and direct reconstruction from the original-scale coefficients.
 
-This example fits all three quantiles to one simulated dataset. The manuscript also considers `n = 1000` and `n = 2000` and summarizes 1,000 Monte Carlo replications. The example and software tests validate the current implementation; they do not establish that earlier manuscript tables were generated with this release.
+Reference output for the example above under R 4.4.1:
+
+```text
+Observed censoring: 54.8%
+Supervised functional censored quantile regression
+tau: 0.5  | observations: 500  | components: 3  | lambda: 1
+Selected IGACV: 0.400344
+Main-setting example passed at tau = 0.3, 0.5, and 0.7.
+```
+
+This example demonstrates model fitting, coefficient reconstruction, and prediction for one dataset from the main simulation setting. The manuscript's Monte Carlo study also considers `n = 1000` and `n = 2000` with 1,000 replications.
 
 For exact correspondence with the supplied generator, the one-dimensional basis is `splines::bs(1:100, df = 6, degree = 3, intercept = TRUE)`, followed by `qr.Q(qr(...))`. Tensor columns use the original ordering with the first basis index as the outer loop and the second as the inner loop; columns are normalized. Functional inner products are discrete pixel sums, matching the supplied code.
 
@@ -166,9 +186,36 @@ sfcqr(
 
 `tau` is the target quantile, `Mmax` is the maximum number of supervised components, and `lambda_list` contains the candidate smoothing penalties. `image_dim = c(nrow, ncol)` specifies the image grid; its product must equal `ncol(Z)`. A supplied `penalty` must be a `q x q` matrix. `scale.X` controls numerical standardization of basis projections during supervised component extraction; both settings preserve the constraint defined in the original basis coordinates. `grid` optionally supplies the quantile grid used to compare candidate models.
 
+Integrated model selection requires at least 11 usable positive quantile levels at or below `tau`. Supplied and default grids are checked before candidate fitting. For a small target quantile, supply a denser grid below `tau` and retain at least one level above it. Censoring can further limit the estimable range.
+
+For example, an uncensored low-quantile fit can use:
+
+```r
+d <- simulate_sfcqr_data(n = 100, censoring = 0, seed = 1)
+low_grid <- sort(unique(c(
+  seq(0.001, 0.05, length.out = 21),
+  seq(0.06, 0.99, by = 0.01)
+)))
+low_fit <- sfcqr(d, tau = 0.05, Mmax = 1, lambda_list = 0, grid = low_grid)
+```
+
 `criterion` accepts `"IGACV"`, `"IAIC"`, or `"IBIC"`, with `"IGACV"` as the default. To use the earlier information-criterion choice, specify `criterion = "IBIC"` explicitly.
 
 Censoring weights support `"beran"`, `"marginal"`, `"lognormal"`, `"loglogistic"`, and `"cox"`. For Beran weights, `beran_covariates = "all"` conditions on all columns of `X`, as specified in Supplementary Section S4. The default is `"all"`; `"first"` remains available as an explicit option. The default bandwidth is `n^(-1 / (p + 4))`, where `p = ncol(X)`; the example supplies `n^(-1/6)` explicitly because there are two covariates. With no scalar covariates, the package uses marginal weights. The original spelling `"bernan"` remains a compatibility alias.
 
 `min_survival` bounds the estimated censoring survival probability below, and weights use the right-continuous survival probability at the observed time, `G(Y)`, including censoring events tied at that time. The default `force_last_event = FALSE` fits that distribution using the original event indicators. The numerator of each IPCW weight is always the original `delta`, so censored observations have zero supervision weight. Setting `force_last_event = TRUE` explicitly applies the legacy largest-time adjustment to the censoring-distribution fit only; it does not change the weight numerator or the final quantile regression event indicators.
 
+## Inspecting a fitted model
+
+The fitted object records the selected component count and smoothing parameter. Coefficient and prediction methods return results on the original input scale:
+
+```r
+fit$M
+fit$lambda
+alpha_hat <- coef(fit, type = "image")
+dim(alpha_hat)
+predict(fit, newdata = newdat, type = "response")
+predict(fit, newdata = newdat, type = "link")
+```
+
+`type = "response"` returns the fitted event-time quantile; `type = "link"` returns its logarithm. See `?sfcqr`, `?coef.sfcqr`, and `?predict.sfcqr` for the available fields and arguments.

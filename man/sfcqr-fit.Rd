@@ -48,7 +48,10 @@ reparameterization; the constraint remains on the original basis scale.}
 \item{penalty}{Optional supplied positive semidefinite basis penalty matrix.}
 
 \item{grid}{Optional strictly increasing quantile grid in (0, 1) spanning
-\code{tau}. By default, uses the grid rule of \code{quantreg} with \code{tau} included.}
+\code{tau}, with at least 11 levels at or below \code{tau} for integrated model
+selection. By default, uses the grid rule of \code{quantreg} with \code{tau} included.
+Small target quantiles may require a denser supplied grid below \code{tau}.
+Censoring can further limit the estimable range.}
 
 \item{criterion}{Selection criterion: \code{"IGACV"} (default, as in the
 manuscript), \code{"IAIC"}, or \code{"IBIC"}.}

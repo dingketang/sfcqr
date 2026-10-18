@@ -1,0 +1,14 @@
+bibentry(
+  bibtype = "Unpublished",
+  title = paste("Supervised functional censored quantile regression",
+                "with application to mammogram data"),
+  author = c(person("Dingke", "Tang"), person("Xuming", "He"),
+             person("Shu", "Jiang")),
+  year = "2026",
+  note = "Manuscript under revision",
+  textVersion = paste(
+    "Tang, D., He, X., and Jiang, S. (2026).",
+    "Supervised functional censored quantile regression with application to mammogram data.",
+    "Manuscript under revision."
+  )
+)

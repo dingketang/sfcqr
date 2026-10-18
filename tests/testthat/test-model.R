@@ -29,12 +29,43 @@ test_that("zero and one scalar covariate and rectangular images fit", {
   }
 })
 
-test_that("unusable candidates fail instead of choosing an infinite score", {
+test_that("identical images are rejected before basis projection", {
   d <- simulate_sfcqr_data(n = 60, censoring = 0, seed = 1)
-  expect_error(sfcqr(d, tau = .05, Mmax = 1, lambda_list = 0),
-               "No valid candidate")
-  d$Z[] <- 1
-  expect_error(sfcqr(d, Mmax = 1, lambda_list = 0), "No valid candidate")
+  for (value in c(0, 1)) {
+    d$Z[] <- value
+    expect_error(sfcqr(d, Mmax = 1, lambda_list = 0),
+                 "no between-subject variation")
+  }
+  # A shared spatial pattern also has no between-subject information.
+  pattern <- seq_len(ncol(d$Z)) / ncol(d$Z)
+  d$Z <- matrix(rep(pattern, each = nrow(d$Z)), nrow = nrow(d$Z))
+  expect_error(sfcqr(d, Mmax = 1, lambda_list = 0),
+               "no between-subject variation")
+})
+
+test_that("integrated tuning explains an insufficient quantile grid", {
+  d <- simulate_sfcqr_data(n = 100, censoring = 0, seed = 1)
+  expect_error(
+    sfcqr(d, Mmax = 1, lambda_list = 0,
+          grid = c(.1, .25, .5, .75, .9)),
+    "at least 11 grid levels at or below tau"
+  )
+  expect_error(
+    sfcqr(d, tau = .05, Mmax = 1, lambda_list = 0),
+    "at least 11 grid levels at or below tau"
+  )
+})
+
+test_that("a dense supplied grid supports a small target quantile", {
+  d <- simulate_sfcqr_data(n = 100, censoring = 0, seed = 1)
+  low_grid <- sort(unique(c(seq(.001, .05, length.out = 21),
+                            seq(.06, .99, by = .01))))
+  fit <- sfcqr(d, tau = .05, Mmax = 1, lambda_list = 0, grid = low_grid)
+  expect_s3_class(fit, "sfcqr")
+  expect_true(all(is.finite(coef(fit))))
+  expect_true(is.finite(fit$criteria$IGACV))
+  expect_gte(fit$criteria$n_tau, 11L)
+  expect_true(all(fit$criteria$tau_vec <= .05))
 })
 
 test_that("input validation explains malformed data", {

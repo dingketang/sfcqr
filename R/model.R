@@ -68,7 +68,10 @@
 #'   reparameterization; the constraint remains on the original basis scale.
 #' @param penalty Optional supplied positive semidefinite basis penalty matrix.
 #' @param grid Optional strictly increasing quantile grid in (0, 1) spanning
-#'   `tau`. By default, uses the grid rule of `quantreg` with `tau` included.
+#'   `tau`, with at least 11 levels at or below `tau` for integrated model
+#'   selection. By default, uses the grid rule of `quantreg` with `tau` included.
+#'   Small target quantiles may require a denser supplied grid below `tau`.
+#'   Censoring can further limit the estimable range.
 #' @param criterion Selection criterion: `"IGACV"` (default, as in the
 #'   manuscript), `"IAIC"`, or `"IBIC"`.
 #' @param beran_covariates `"all"` (default) conditions on every scalar
@@ -120,6 +123,18 @@ sfcqr <- function(data, tau = 0.5, Mmax = 30,
   }
   Mmax <- min(as.integer(Mmax), q, n - p - 2L)
   if (Mmax < 1L) stop("Too few observations for scalar covariates and components.")
+  # Check the original images before matrix multiplication can introduce
+  # row-dependent rounding in otherwise identical projected features.
+  image_varies <- FALSE
+  for (i in seq.int(2L, n)) {
+    if (any(Z[i, ] != Z[1L, ])) {
+      image_varies <- TRUE
+      break
+    }
+  }
+  if (!image_varies) {
+    stop("Image predictors have no between-subject variation.", call. = FALSE)
+  }
   if (is.null(image_dim)) image_dim <- data$image_dim
   image_dim <- .image_dimensions(image_dim, ncol(Z),
                                   required = is.null(penalty) && any(lambda_list > 0))
@@ -136,6 +151,12 @@ sfcqr <- function(data, tau = 0.5, Mmax = 30,
       any(grid <= 0 | grid >= 1) || any(diff(grid) <= 0) ||
       min(grid) >= tau || max(grid) <= tau) {
     stop("grid must be strictly increasing in (0, 1) and span tau.")
+  }
+  n_grid_tau <- sum(grid <= tau)
+  if (n_grid_tau < 11L) {
+    stop("Integrated model selection requires at least 11 grid levels at or below tau; ",
+         "the current grid supplies ", n_grid_tau, ". Supply a denser grid below tau ",
+         "and retain at least one level above tau.", call. = FALSE)
   }
   weight_result <- .capture_fit(get_weights(Y, X, delta,
     method = censoring_method, bandwidth = bandwidth, min_survival = min_survival,

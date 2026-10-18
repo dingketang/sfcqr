@@ -1,5 +1,12 @@
 # sfcqr 0.1.2
 
+- Reject identical images before basis projection so floating-point rounding
+  cannot create artificial between-subject variation.
+- Validate the integrated criterion's minimum of 11 quantile-grid levels
+  at or below the target before fitting candidate models.
+- Document low-quantile grid requirements and add a working dense-grid example.
+- Update installation instructions, repository metadata, manuscript citation,
+  and release-maintenance guidance.
 - Component extraction now solves `(I + lambda * P) a = q` and normalizes
   the direction in the same penalized metric.
 - Predictor standardization is an equivalent coordinate transformation of
